@@ -164,7 +164,10 @@ namespace cond {
         } else if ( theBackendType == CASSANDRA || theBackendType == DUMMY_CASSANDRA){
           NoSqlEngine::resetAs<CassandraSession, CassandraSchema, CassandraGTSchema, CassandraTransaction>(
             coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
-        } else {
+        } else if ( theBackendType == POSTGREST ) {
+          NoSqlEngine::resetAs<PostgrestSession, PostgrestSchema, PostgrestGTSchema, PostgrestTransaction>(
+            coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
+        } else {  
           throwException( "No valid database found.", "SessionImpl::startTransaction" );
         }
       } else {

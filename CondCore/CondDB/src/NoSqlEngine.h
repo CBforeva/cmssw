@@ -7,14 +7,13 @@
 #include "DataSource.h"
 #include "Cassandra.h"
 #include "MongoDb.h"
-//#include "Hypertable.h"
+#include "Postgrest.h"
 
 #include <memory>
 
 #include <iostream>
 
-
-// temporareliy
+// temporary
 #include <boost/shared_ptr.hpp>
 
 namespace cond {
@@ -36,8 +35,8 @@ namespace cond {
         if (found!=std::string::npos) return DUMMY_CASSANDRA;
         found = connStr.find("cassandra");
         if (found!=std::string::npos) return CASSANDRA;
-        //found = connStr.find("cassandra");
-        //if (found!=std::string::npos) return CASSANDRA;
+        found = connStr.find("postgrest");
+        if (found!=std::string::npos) return POSTGREST;
         //found = connStr.find("hypertable");
         //if (found!=std::string::npos) return HYPERTABLE;
         return UNKNOWN_DB; 
@@ -72,7 +71,7 @@ namespace cond {
          BackendType bt = backendFromConnStr( connStr );
          switch( bt ) {
            case MONGO_DB:
-#warning "FIXME: Hard code for connection string... (R.S.)"
+#warning "FIXME: Hard code for connection strings... (R.S.)"
              return create<MongoSession, MongoTransaction>( "ghost-hawk.cern.ch:27017", bt );
              break;
            case DUMMY_MONGO_DB:
@@ -83,6 +82,9 @@ namespace cond {
              break;
            case DUMMY_CASSANDRA:
              return create<CassandraSession, CassandraTransaction>( "cass-test.cern.ch", bt);
+             break;
+           case POSTGREST:
+             return create<PostgrestSession, PostgrestTransaction>( "postgre-node.cern.ch:3000", bt);
              break;
            case UNKNOWN_DB:
              throwException( "NoSqlEngine cannot create SessionImpl for connection string: " + connStr, "NoSqlEngine::create" );
