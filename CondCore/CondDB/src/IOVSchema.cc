@@ -1,4 +1,5 @@
 #include "CondCore/CondDB/interface/Exception.h"
+#include "CondCore/CondDB/interface/Utils.h"
 #include "IOVSchema.h"
 //
 #include <openssl/sha.h>
@@ -7,7 +8,7 @@ namespace cond {
 
   namespace persistency {
 
-    cond::Hash makeHash( const std::string& objectType, const cond::Binary& data ){
+    /*cond::Hash makeHash( const std::string& objectType, const cond::Binary& data ){
       SHA_CTX ctx;
       if( !SHA1_Init( &ctx ) ){
 	throwException( "SHA1 initialization error.","IOVSchema::makeHash");
@@ -30,7 +31,7 @@ namespace cond {
       }                                                                                                                                              
       tmp[20*2] = 0;                                                                                                                                 
       return tmp;                                                                                                                                    
-    }
+    }*/
 
     TAG::Table::Table( coral::ISchema& schema ):
       m_schema( schema ){

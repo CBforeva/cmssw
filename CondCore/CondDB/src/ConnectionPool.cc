@@ -1,6 +1,7 @@
 #include "CondCore/CondDB/interface/ConnectionPool.h"
 #include "DbConnectionString.h"
 #include "SessionImpl.h"
+#include "NoSqlEngine.h"
 #include "IOVSchema.h"
 //
 #include "CondCore/DBCommon/interface/CoralServiceManager.h"
@@ -158,6 +159,12 @@ namespace cond {
 					   const std::string& transactionId, 
 					   bool writeCapable,
 					   BackendType backType){
+       
+      if ( NoSqlEngine::backend(connectionString) != UNKNOWN_DB) {
+        //std::cout << " WOOF -> NoSQL specific keywords found in connection string ..." << std::endl;
+        return Session( NoSqlEngine::sessionImpl( connectionString ) );
+      }
+
       coral::ConnectionService connServ;
       std::pair<std::string,std::string> fullConnectionPars = getConnectionParams( connectionString, transactionId );
       if( !fullConnectionPars.second.empty() ) {

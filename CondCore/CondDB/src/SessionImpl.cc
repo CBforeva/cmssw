@@ -1,8 +1,10 @@
 #include "CondCore/CondDB/interface/Exception.h"
 #include "SessionImpl.h"
+#include "NoSqlEngine.h"
 #include "DbConnectionString.h"
 // for the ORA bridge
 #include "OraDbSchema.h"
+// for NoSQL databases
 #include "CondCore/DBCommon/interface/DbConnection.h"
 #include "CondCore/DBCommon/interface/DbTransaction.h"
 //-ap: also to be removed when ORA goes:
@@ -10,19 +12,22 @@
 //
 //
 #include "RelationalAccess/ISessionProxy.h"
-#include "RelationalAccess/ITransaction.h"
+//#include "RelationalAccess/ITransaction.h"
+#include "ICondTransaction.h"
 
 namespace cond {
 
   namespace persistency {
 
-    class CondDBTransaction : public ITransaction {
+    class CondDBTransaction : public ICondTransaction {
     public:
       CondDBTransaction( const boost::shared_ptr<coral::ISessionProxy>& coralSession ):
 	m_session( coralSession ){
       }
       virtual ~CondDBTransaction(){}
-     
+
+      void start( bool readOnly ) { m_session->transaction().start(readOnly); }
+
       void commit(){
 	m_session->transaction().commit();
       }
@@ -31,20 +36,27 @@ namespace cond {
 	m_session->transaction().rollback();
       }
 
-      bool isActive(){
+      bool isActive() const {
 	return m_session->transaction().isActive();
+      }
+
+      bool isReadOnly() const { /* FIXME: RS */
+        //throwException( "Under construction... ", "CondDBTransaction::isReadOnly");
+        return false;
       }
     private: 
       boost::shared_ptr<coral::ISessionProxy> m_session;
     };
 
-    class OraTransaction : public ITransaction {
+    class OraTransaction : public ICondTransaction {
     public:
       OraTransaction( const cond::DbSession& session ):
 	m_session( session ){
 	isOra = true;
       }
       virtual ~OraTransaction(){}
+
+      void start( bool readOnly ) { m_session.transaction().start( readOnly ); }
 
       void commit(){
 	m_session.transaction().commit();
@@ -53,8 +65,18 @@ namespace cond {
       void rollback(){
 	m_session.transaction().rollback();
       }
-      bool isActive() {
-	return m_session.transaction().isActive();
+      bool isActive() const {
+        return false;
+        //const bool isAct = m_session.transaction().isActive();
+        //return isAct;
+      }
+      bool isReadOnly() const {
+        return false;
+        //const bool isRo = m_session.transaction().isReadOnly();
+        //return isRo;
+        //return m_session.transaction().isReadOnly();
+        //throwException( "Under construction... ", "OraTransaction::isReadOnly");
+        //return false;
       }
     private:
       cond::DbSession m_session;
@@ -86,9 +108,20 @@ namespace cond {
     SessionImpl::SessionImpl( boost::shared_ptr<coral::ISessionProxy>& session, 
 			      const std::string& connectionStr,
 			      BackendType backType ):
-      coralSession( session ),
+      //coralSession( session ),
       connectionString( connectionStr ),
       theBackendType( backType ){
+
+      coralSession.reset( new DataSource<coral::ISessionProxy>( session ) );
+    }
+
+    /* DataSource constructed. New, generic one. */
+    SessionImpl::SessionImpl( boost::shared_ptr<DataSourceBase>& session,
+                              const std::string& connectionStr,
+                              BackendType backType ):
+      connectionString( connectionStr),
+      theBackendType( backType ) {
+      coralSession = session;
     }
 
     SessionImpl::~SessionImpl(){
@@ -113,19 +146,27 @@ namespace cond {
       if( !transaction.get() ){ 
 	if ( theBackendType == ORA_DB ) {
 	  cond::DbSession oraSession;
-	  oraSession.open( coralSession, connectionString ); 
+	  oraSession.open( coralSession->getAs<coral::ISessionProxy>(), connectionString ); //coralSession, connectionString ); 
 	  oraSession.transaction().start( readOnly );
 	  iovSchemaHandle.reset( new OraIOVSchema( oraSession ) );
 	  gtSchemaHandle.reset( new OraGTSchema( oraSession ) );  		       
 	  transaction.reset( new OraTransaction( oraSession ) );
 	} else if ( theBackendType == COND_DB ){
-	  coralSession->transaction().start( readOnly );
-	  iovSchemaHandle.reset( new IOVSchema( coralSession->nominalSchema() ) );
-	  gtSchemaHandle.reset( new GTSchema( coralSession->nominalSchema() ) );
-	  transaction.reset( new CondDBTransaction( coralSession ) );
-	} else {
-	  throwException( "No valid database found.", "SessionImpl::startTransaction" );
-	}
+	  boost::shared_ptr<coral::ISessionProxy>& cSess = coralSession->getAs<coral::ISessionProxy>();
+          coralSession->transaction().start( readOnly );
+	  iovSchemaHandle.reset( new IOVSchema( cSess->nominalSchema() ) );
+	  gtSchemaHandle.reset( new GTSchema( cSess->nominalSchema() ) );
+	  transaction.reset( new CondDBTransaction( cSess ) );
+	} else if ( theBackendType == MONGO_DB || theBackendType == DUMMY_MONGO_DB){
+          //std::cout << " Calling NoSqlEngine::resetAs<MongoSession, MongoSchema, MongoGTSchema, MongoTransaction>(...)" << std::endl;
+          NoSqlEngine::resetAs<MongoSession, MongoSchema, MongoGTSchema, MongoTransaction>(
+          coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
+        } else if ( theBackendType == CASSANDRA || theBackendType == DUMMY_CASSANDRA){
+          NoSqlEngine::resetAs<CassandraSession, CassandraSchema, CassandraGTSchema, CassandraTransaction>(
+            coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
+        } else {
+          throwException( "No valid database found.", "SessionImpl::startTransaction" );
+        }
       } else {
 	if(!readOnly ) throwException( "An update transaction is already active.",
 				       "SessionImpl::startTransaction" );

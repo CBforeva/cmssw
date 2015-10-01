@@ -4,6 +4,8 @@
 #include "CondCore/CondDB/interface/Types.h"
 #include "IOVSchema.h"
 #include "GTSchema.h"
+#include "DataSource.h"
+#include "ICondTransaction.h"
 //
 #include "CondCore/DBCommon/interface/DbSession.h"
 //
@@ -23,7 +25,7 @@ namespace cond {
 
   namespace persistency {
 
-    class ITransaction {
+    /*class ITransaction {
     public:
       virtual ~ITransaction(){}
       virtual void commit() = 0;
@@ -35,7 +37,7 @@ namespace cond {
       bool gtDbOpen = false;
       bool isOra = false;
       size_t clients = 0;
-    };
+    };*/
 
     BackendType checkBackendType( boost::shared_ptr<coral::ISessionProxy>& session, 
 				  const std::string& connectionString );
@@ -48,6 +50,9 @@ namespace cond {
       SessionImpl( boost::shared_ptr<coral::ISessionProxy>& session, 
 		   const std::string& connectionString, 
 		   BackendType backType );
+      SessionImpl( boost::shared_ptr<DataSourceBase>& ds,
+                   const std::string& connectionString,
+                   BackendType backType );
 
       ~SessionImpl();
       
@@ -68,11 +73,12 @@ namespace cond {
       
     public:
       // allows for session shared among more services. To be changed to unique_ptr when we stop needing this feature.
-      boost::shared_ptr<coral::ISessionProxy> coralSession;
+      //boost::shared_ptr<coral::ISessionProxy> coralSession;
+      boost::shared_ptr<DataSourceBase> coralSession;
       // not really useful outside the ORA bridging...
       std::string connectionString;
       BackendType theBackendType;
-      std::unique_ptr<ITransaction> transaction;
+      std::unique_ptr<ICondTransaction> transaction;
       std::unique_ptr<IIOVSchema> iovSchemaHandle; 
       std::unique_ptr<IGTSchema> gtSchemaHandle; 
     };

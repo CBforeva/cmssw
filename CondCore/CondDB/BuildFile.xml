@@ -1,11 +1,17 @@
+<flags CXXFLAGS="-Wno-sign-compare -Wno-unused-variable -std=c++11 -g"/>
+
+<use   name="boost"/>
+<use   name="cpp-netlib"/>
+
 <use   name="CondCore/DBCommon"/>
 <use   name="CondCore/IOVService"/>
 <use   name="CondCore/MetaDataService"/>
 <use   name="CondCore/TagCollection"/>
 <use   name="CondCore/ORA"/>
 <use   name="FWCore/Framework"/>
-<use   name="boost"/>
 <use   name="openssl"/>
+<use   name="mongo-cxx-driver"/>
+<use   name="cassandra-cxx-driver"/>
 <use   name="CoralCommon"/>
 <use   name="CoralKernel"/>
 <use   name="RelationalAccess"/>

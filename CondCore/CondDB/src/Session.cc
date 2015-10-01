@@ -271,7 +271,8 @@ namespace cond {
 
     coral::ISessionProxy& Session::coralSession(){
       if( !m_session->coralSession.get() ) throwException( "The session is not active.","Session::coralSession");
-      return *m_session->coralSession; 
+      //return *m_session->coralSession;
+      return *m_session->coralSession->getAs<coral::ISessionProxy>().get(); 
     }
 
     coral::ISchema& Session::nominalSchema(){

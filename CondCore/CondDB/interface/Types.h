@@ -20,7 +20,7 @@
 namespace cond {
 
   // to be removed after the transition to new DB
-  typedef enum { UNKNOWN_DB=0, COND_DB, ORA_DB } BackendType;
+  typedef enum { UNKNOWN_DB=0, COND_DB, ORA_DB, MONGO_DB, DUMMY_MONGO_DB, CASSANDRA, DUMMY_CASSANDRA } BackendType;
   static constexpr BackendType DEFAULT_DB = COND_DB;
   // for the validation of migrated data
   typedef enum { ERROR=0, MIGRATED, VALIDATED } MigrationStatus;
