@@ -11,8 +11,10 @@
 #include <vector>
 #include <boost/property_tree/json_parser.hpp>
 
+#include "MemoryStruct.h"
+
 #define USE_PTREE
-#define USE_BASE64
+//#define USE_BASE64
 
 namespace cond {
 
@@ -371,7 +373,6 @@ namespace cond {
       return true;
     } 
 
-
     bool PayloadService::select( const cond::Hash& payloadHash, 
 				       std::string& objectType, 
 				       cond::Binary& payloadData,
@@ -379,7 +380,7 @@ namespace cond {
 #ifdef USE_BASE64
       auto cprUrl = cpr::Url{ m_session->getUrl() + M_PAYLOAD_PATH + "/" + payloadHash };
       auto response = cpr::Get( cprUrl, cpr::Timeout{0L} );
-      if ( !CheckResponseStatus( response.status_code, "IOVService::selectSnapshotByGroup" ) ) {
+      if ( !CheckResponseStatus( response.status_code, "PayloadService::select" ) ) {
         return false;
       } else {
   #ifdef USE_PTREE // Use ptree.
@@ -391,25 +392,22 @@ namespace cond {
 
   #endif
       } 
-#else
-      auto cprUrl = cpr::Url{ m_session->getUrl() + M_PAYLOAD_PATH + "/" + payloadHash + "/data" };
+#else // use MemoryStruct to read payload.
+      auto cprUrl = cpr::Url{ m_session->getUrl() + M_PAYLOAD_PATH + "/" + payloadHash };
       auto response = cpr::Get( cprUrl, cpr::Timeout{0L} );
+      if ( !CheckResponseStatus( response.status_code, "PayloadService::select" ) ) {
+        return false;
+      } else {
+  #ifdef USE_PTREE // Use ptree.
+        boost::property_tree::ptree pt = getPtree( response.text );
+        objectType = pt.get<std::string>(M_TYPE);
+        streamerInfoData.copy( base64_decode(pt.get<std::string>(M_SINFO)) );
+  #else // use JSON header.
 
-      CURL *curl;
-      FILE *fp;
-      CURLcode res;
-      char *url = "http://test-nosql-db.cern.ch";
-      char outfilename[FILENAME_MAX] = "/....";
-      curl = curl_easy_init();                                                                                                      if (curl)
-      {   
-        fp = fopen(outfilename,"wb");
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-        fclose(fp);
-      } 
+  #endif
+      }
+      std::string url( m_session->getUrl() + M_PAYLOAD_PATH + "/" + payloadHash + "/data" );
+      readOctetStream( url, payloadData );
 #endif 
       return true;
     } 

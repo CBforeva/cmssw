@@ -11,6 +11,7 @@
 <use   name="FWCore/Framework"/>
 <use   name="openssl"/>
 <use   name="cpr"/>
+<use   name="curl"/>
 <use   name="mongo-cxx-driver"/>
 <use   name="cassandra-cxx-driver"/>
 <!--use   name="riak-cxx-driver"/-->
