@@ -2,6 +2,7 @@
 
 <use   name="CondCore/CondDB"/>
 <use   name="CondFormats/Common"/>
+<use   name="CondFormats/DTObjects"/>
 <use   name="DataFormats/StdDictionaries"/>
 <use   name="FWCore/PluginManager"/>
 <use   name="FWCore/Utilities"/>
@@ -13,6 +14,10 @@
 <bin   file="testConditionDatabase_1.cpp" name="testConditionDatabase_1">
 </bin>
 <bin   file="testConditionDatabase_2.cpp" name="testConditionDatabase_2">
+</bin>
+<bin   file="testNoSQLConditionDatabase.cpp" name="testNoSQLConditionDatabase">
+</bin>
+<bin   file="testRestConditionDatabase.cpp" name="testRestConditionDatabase">
 </bin>
 <bin   file="testRootStreaming.cpp" name="testRootStreaming">
   <lib   name="testCondDBDict"/>

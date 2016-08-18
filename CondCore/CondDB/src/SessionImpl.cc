@@ -157,16 +157,27 @@ namespace cond {
 	  iovSchemaHandle.reset( new IOVSchema( cSess->nominalSchema() ) );
 	  gtSchemaHandle.reset( new GTSchema( cSess->nominalSchema() ) );
 	  transaction.reset( new CondDBTransaction( cSess ) );
-	} else if ( theBackendType == MONGO_DB || theBackendType == DUMMY_MONGO_DB){
-          //std::cout << " Calling NoSqlEngine::resetAs<MongoSession, MongoSchema, MongoGTSchema, MongoTransaction>(...)" << std::endl;
+	
+        } else if ( theBackendType == MONGO_DB ){
           NoSqlEngine::resetAs<MongoSession, MongoSchema, MongoGTSchema, MongoTransaction>(
           coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
-        } else if ( theBackendType == CASSANDRA || theBackendType == DUMMY_CASSANDRA){
+        
+        } else if ( theBackendType == CASSANDRA ){
           NoSqlEngine::resetAs<CassandraSession, CassandraSchema, CassandraGTSchema, CassandraTransaction>(
             coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
+        
+        } else if ( theBackendType == RIAK ){
+          NoSqlEngine::resetAs<RiakSession, RiakSchema, RiakGTSchema, RiakTransaction>(
+            coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
+        
         } else if ( theBackendType == POSTGREST ) {
           NoSqlEngine::resetAs<PostgrestSession, PostgrestSchema, PostgrestGTSchema, PostgrestTransaction>(
             coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
+
+        } else if ( theBackendType == REST ) {
+          NoSqlEngine::resetAs<RestSession, RestSchema, RestGTSchema, RestTransaction>(
+            coralSession, iovSchemaHandle, gtSchemaHandle, transaction, readOnly );
+
         } else {  
           throwException( "No valid database found.", "SessionImpl::startTransaction" );
         }

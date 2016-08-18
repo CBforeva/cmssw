@@ -1,5 +1,16 @@
 #ifndef CondCore_CondDB_NoSqlEngine_h
 #define CondCore_CondDB_NoSqlEngine_h
+//
+// Package:     CondDB
+// 
+// 
+/*
+   Description: Utility class for switching database backends.
+*/
+//
+// Author:      Roland Sipos
+// Created:     June 2015
+//
 
 #include "CondCore/CondDB/interface/Exception.h"
 #include "CondCore/CondDB/interface/Types.h"
@@ -7,7 +18,9 @@
 #include "DataSource.h"
 #include "Cassandra.h"
 #include "MongoDb.h"
+#include "Riak.h"
 #include "Postgrest.h"
+#include "RestSchema.h"
 
 #include <memory>
 
@@ -31,14 +44,14 @@ namespace cond {
       static BackendType backendFromConnStr( const std::string& connStr ) {
         std::size_t found = connStr.find( "mongo" );
         if (found!=std::string::npos) return MONGO_DB;
-        found = connStr.find("WOOF");
-        if (found!=std::string::npos) return DUMMY_CASSANDRA;
         found = connStr.find("cassandra");
         if (found!=std::string::npos) return CASSANDRA;
+        found = connStr.find("riak");
+        if (found!=std::string::npos) return RIAK;;
         found = connStr.find("postgrest");
         if (found!=std::string::npos) return POSTGREST;
-        //found = connStr.find("hypertable");
-        //if (found!=std::string::npos) return HYPERTABLE;
+        found = connStr.find("rest");
+        if (found!=std::string::npos) return REST;
         return UNKNOWN_DB; 
       } 
 
@@ -71,20 +84,20 @@ namespace cond {
          BackendType bt = backendFromConnStr( connStr );
          switch( bt ) {
            case MONGO_DB:
-#warning "FIXME: Hard code for connection strings... (R.S.)"
-             return create<MongoSession, MongoTransaction>( "ghost-hawk.cern.ch:27017", bt );
-             break;
-           case DUMMY_MONGO_DB:
-             return create<MongoSession, MongoTransaction>( "cloud-jmeter.cern.ch:27017", bt );
+#warning "FIXME: Hardcoded connection strings... (R.S.)"
+             return create<MongoSession, MongoTransaction>( "node1.cern.ch:27017", bt );
              break;
            case CASSANDRA:
              return create<CassandraSession, CassandraTransaction>( "node1.cern.ch,node2.cern.ch,node3.cern.ch,node4.cern.ch,node5.cern.ch", bt );
-             break;
-           case DUMMY_CASSANDRA:
-             return create<CassandraSession, CassandraTransaction>( "cass-test.cern.ch", bt);
+             break; 
+           case RIAK:
+             return create<RiakSession, RiakTransaction>( "node1.cern.ch", bt);
              break;
            case POSTGREST:
-             return create<PostgrestSession, PostgrestTransaction>( "postgre-node.cern.ch:3000", bt);
+             return create<PostgrestSession, PostgrestTransaction>( "test-nosql-db.cern.ch:3000", bt);
+             break;
+           case REST:
+             return create<RestSession, RestTransaction>( "http://test-nosql-db.cern.ch:8080", bt);
              break;
            case UNKNOWN_DB:
              throwException( "NoSqlEngine cannot create SessionImpl for connection string: " + connStr, "NoSqlEngine::create" );
@@ -109,8 +122,6 @@ namespace cond {
         boost::shared_ptr<T_S>& typedSession = uniSession->getAs<T_S>();
         typedSession->transaction().start( readOnly );
         iovSchemaHandle.reset( new T_SC( typedSession ) );
-        /* GT Schema handling is missing in the NoSql databases. */
-#warning "FIXME: GT Schema handling should be handled by the same session also? (R.S.)"
         gtSchemaHandle.reset( new T_GC( typedSession ) );
         transaction.reset( new T_T( typedSession ) );
       }

@@ -10,8 +10,11 @@
 <use   name="CondCore/ORA"/>
 <use   name="FWCore/Framework"/>
 <use   name="openssl"/>
+<use   name="cpr"/>
 <use   name="mongo-cxx-driver"/>
 <use   name="cassandra-cxx-driver"/>
+<!--use   name="riak-cxx-driver"/-->
+<use   name="riakpp-driver"/>
 <use   name="CoralCommon"/>
 <use   name="CoralKernel"/>
 <use   name="RelationalAccess"/>
